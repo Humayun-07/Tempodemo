@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tempo — AI Weekly Planner</title>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#fafaf9;--surface:#fff;--surface2:#f4f3f0;--surface3:#eeede9;
+--border:#e5e3dd;--border2:#d4d2cb;--border3:#c8c5be;
+--text:#1a1916;--text2:#5c5a54;--text3:#9b9890;--textInv:#fff;
+--accent:#7c3aed;--accentH:#6d28d9;--accentL:#ede9fe;--accentM:#c4b5fd;--accentD:#5b21b6;--accentS:#faf5ff;
+--green:#059669;--greenL:#d1fae5;--greenD:#065f46;
+--amber:#d97706;--amberL:#fef3c7;--amberD:#92400e;
+--red:#dc2626;--redL:#fee2e2;--redD:#991b1b;
+--blue:#2563eb;--blueL:#dbeafe;--blueD:#1e40af;
+--pink:#a21caf;--pinkL:#fdf4ff;--pinkD:#701a75;
+--teal:#0d9488;--tealL:#ccfbf1;--tealD:#115e59;
+--font:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+--radius:8px;--radiusLg:12px;--radiusXl:16px;--radiusFull:9999px;
+--shadowSm:0 1px 2px rgba(0,0,0,0.05);--shadow:0 1px 3px rgba(0,0,0,0.1);--shadowLg:0 10px 15px rgba(0,0,0,0.1);
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+.app{display:flex;height:100vh}
+button{font-family:var(--font);cursor:pointer;border-radius:var(--radius);font-size:13px;font-weight:500;border:1px solid var(--border2);background:var(--surface);color:var(--text);padding:7px 14px;transition:all .15s;outline:0;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+button:hover{background:var(--surface2)}.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn-primary:hover{background:var(--accentH)}.btn-primary:disabled{opacity:.5}.btn-sm{padding:5px 12px;font-size:11px}.btn-xs{padding:3px 8px;font-size:10px}.btn-outline{border-color:var(--accentM);color:var(--accent)}.btn-outline:hover{background:var(--accentL)}.btn-ai{background:linear-gradient(135deg,#7c3aed,#a21caf);border-color:transparent;color:#fff}.btn-ai:hover{background:linear-gradient(135deg,#6d28d9,#86198f);color:#fff}
+.sidebar{width:232px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10}
+.sidebar-header{padding:18px 16px 14px;border-bottom:1px solid var(--border)}.sidebar-brand{font-size:18px;font-weight:800;letter-spacing:-.6px;display:flex;align-items:center;gap:8px}.sidebar-badge{font-size:9px;font-weight:700;background:var(--accentL);color:var(--accent);border-radius:4px;padding:2px 7px}.ai-badge{font-size:9px;font-weight:700;background:linear-gradient(135deg,#ede9fe,#fdf4ff);color:#7c3aed;border-radius:4px;padding:2px 7px;border:1px solid #c4b5fd}
+.cal-pill{margin-top:10px;padding:9px 11px;border-radius:var(--radius);display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;border:1px solid var(--border);transition:all .15s;background:var(--surface2)}.cal-pill.connected{background:var(--greenL);border-color:var(--green);color:var(--greenD)}.cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--red)}.cal-pill.connected .cal-dot{background:var(--green)}.cal-info{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.nav{padding:14px 10px;flex:1;overflow-y:auto}.nav-group{margin-bottom:20px}.nav-label{font-size:8px;font-weight:800;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;padding:0 10px;margin-bottom:5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;color:var(--text2);font-size:13px;border:none;background:0 0;width:100%;text-align:left;margin-bottom:1px}.nav-item:hover{background:var(--surface2)}.nav-item.active{background:var(--accentL);color:var(--accent);font-weight:600}.nav-badge{margin-left:auto;font-size:9px;background:var(--surface3);color:var(--text3);border-radius:var(--radiusFull);padding:2px 7px;font-weight:600}.nav-item.active .nav-badge{background:var(--accentM);color:var(--accentD)}
+.sidebar-footer{padding:12px 10px;border-top:1px solid var(--border)}.user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px}.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accentM),var(--accent));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}.user-name{font-size:12px;font-weight:600}.user-email{font-size:10px;color:var(--text3)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;background:var(--bg)}
+.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}.topbar-left{display:flex;align-items:center;gap:8px}.week-arrow{width:28px;height:28px;border:1px solid var(--border);border-radius:var(--radius);background:0 0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;padding:0}.week-arrow:hover{background:var(--surface2)}.week-title{font-size:13px;font-weight:600;min-width:150px;text-align:center}.today-btn{font-size:10px;padding:3px 10px;border-radius:var(--radiusFull);background:var(--accentL);color:var(--accent)}.progress-compact{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text3)}.progress-bar{width:70px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}.progress-fill{height:100%;background:var(--accent);transition:width .4s}.topbar-actions{display:flex;gap:6px}
+.content{flex:1;display:flex;overflow:hidden}.main-area{flex:1;overflow-y:auto;padding:18px 20px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radiusLg);padding:14px 16px}.stat-box:hover{border-color:var(--accentM)}.stat-label{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-bottom:8px}.stat-value{font-size:28px;font-weight:300;line-height:1}.stat-value.accent{color:var(--accent)}.stat-value.green{color:var(--green)}.stat-value.amber{color:var(--amber)}.stat-change{font-size:10px;color:var(--text3)}.insight-card{background:var(--accentS);border:1px solid var(--accentM);border-radius:var(--radiusLg);padding:12px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}.insight-emoji{font-size:22px}.insight-title{font-size:12px;font-weight:700;color:var(--accentD)}.insight-text{font-size:11px;color:var(--accent)}
+.section-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.section-heading{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}.day-col{background:var(--surface);border:1px solid var(--border);border-radius:var(--radiusLg);overflow:hidden}.day-header{padding:10px 12px 8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}.day-name{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase}.day-date{font-size:20px;font-weight:300}.day-col.today{border-color:var(--accentM);background:var(--accentS)}.day-col.today .day-name{color:var(--accent)}.day-col.today .day-date{color:var(--accent)}.day-content{padding:8px 10px;min-height:90px}.event-pill{border-radius:5px;padding:5px 8px;font-size:10px;cursor:pointer}.event-pill.work{background:var(--surface2);border-left:3px solid var(--border2)}.event-pill.tempo{background:var(--accentL);border-left:3px solid var(--accentM)}.event-name{font-weight:600}.event-pill.tempo .event-name{color:var(--accentD)}.empty-day{color:var(--text3);font-size:9px;text-align:center;padding:12px 0}
+.side-panel{width:272px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column}.panel-header{padding:14px 16px 12px;border-bottom:1px solid var(--border)}.panel-title{font-size:12px;font-weight:700}.panel-stats{font-size:10px;color:var(--text3)}.panel-scroll{flex:1;overflow-y:auto;padding:10px 12px}
+.task-card{border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:7px}.task-card.scheduled{border-left:3px solid var(--accentM)}.task-card.committed{border-left:3px solid var(--green)}.task-name{font-size:11px;font-weight:600}.task-tag{font-size:7px;font-weight:700;padding:2px 5px;border-radius:3px;text-transform:uppercase}.tag-health{background:var(--greenL);color:var(--greenD)}.tag-errand{background:var(--amberL);color:var(--amberD)}.tag-social{background:var(--accentL);color:var(--accentD)}.tag-admin{background:var(--blueL);color:var(--blueD)}.tag-hobby{background:var(--pinkL);color:var(--pinkD)}.tag-rest{background:var(--tealL);color:var(--tealD)}.tag-personal{background:var(--surface3);color:var(--text2)}.task-dur{font-size:9px;color:var(--text3);font-family:var(--mono)}.slot-ready{background:var(--accentL);color:var(--accent);font-size:8px;padding:2px 6px;border-radius:3px}.slot-done{background:var(--greenL);color:var(--greenD);font-size:8px;padding:2px 6px;border-radius:3px}
+.quick-add-area{padding:12px;border-top:1px solid var(--border)}.quick-add-area textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:9px;font-size:11px;font-family:var(--font);resize:none;height:58px;outline:0;background:var(--bg)}.quick-add-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}.modal-overlay.hidden{display:none}.modal{background:var(--surface);border-radius:var(--radiusXl);box-shadow:var(--shadowLg);width:500px;max-height:85vh;overflow-y:auto;padding:24px}.modal h2{font-size:17px;font-weight:700}.modal .subtitle{font-size:12px;color:var(--text2);margin-bottom:16px}.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}textarea.form-input{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:9px;font-size:11px;font-family:var(--font);resize:vertical;min-height:100px;outline:0}.chip-group{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.chip{padding:5px 12px;border-radius:var(--radiusFull);font-size:10px;cursor:pointer;border:1px solid var(--border2)}.chip:hover{background:var(--surface2)}
+.toast-container{position:fixed;top:16px;right:16px;z-index:300;display:flex;flex-direction:column;gap:6px}.toast{padding:11px 15px;border-radius:var(--radiusLg);font-size:12px;box-shadow:var(--shadowLg);animation:in .3s}.toast.ok{background:var(--greenL);color:var(--greenD)}.toast.err{background:var(--redL);color:var(--redD)}.toast.info{background:var(--blueL);color:var(--blueD)}@keyframes in{from{transform:translateX(120%)}to{transform:translateX(0)}}.spinner{width:18px;height:18px;border:2.5px solid var(--surface3);border-top:2.5px solid var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}.empty-state{text-align:center;padding:50px 20px}.empty-state .icon{font-size:40px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="sidebar-header"><div class="sidebar-brand">Tempo <span class="sidebar-badge">MVP</span><span class="ai-badge">AI</span></div>
+<div class="cal-pill" id="calPill" onclick="handleAuth()"><span class="cal-dot"></span><span class="cal-info" id="calPillText">Connect Google Calendar</span></div></div>
+<nav class="nav">
+<div class="nav-group"><div class="nav-label">Planning</div>
+<button class="nav-item active" onclick="switchTab('plan')">📅 Weekly Plan<span class="nav-badge" id="navCount">0</span></button>
+<button class="nav-item" onclick="openBrainDump()">🧠 AI Brain Dump</button>
+<button class="nav-item" onclick="switchTab('tasks')">✓ All Tasks<span class="nav-badge" id="navAllTasks">0</span></button></div>
+<div class="nav-group"><div class="nav-label">Setup</div>
+<button class="nav-item" onclick="switchTab('settings')">⚙️ Settings</button></div>
+</nav>
+<div class="sidebar-footer"><div class="user-chip"><div class="user-avatar" id="userAvatar">?</div><div><div class="user-name" id="userName">Sign in</div><div class="user-email" id="userEmail">to get started</div></div></div></div>
+</aside>
+<main class="main">
+<div class="topbar">
+<div class="topbar-left"><button class="week-arrow" onclick="navWeek(-1)">←</button><span class="week-title" id="weekTitle">Loading...</span><button class="week-arrow" onclick="navWeek(1)">→</button><button class="today-btn" onclick="goToToday()">Today</button></div>
+<div class="progress-compact"><div class="progress-bar"><div class="progress-fill" id="progBar" style="width:0%"></div></div><span id="progText">0 planned</span></div>
+<div class="topbar-actions"><button class="btn-ai btn-sm" onclick="openBrainDump()">✨ AI Brain Dump</button><button class="btn-primary btn-sm" id="commitTopBtn" onclick="commitAll()" disabled>Commit to Calendar</button></div>
+</div>
+<div class="content">
+<div class="main-area" id="mainArea"></div>
+<aside class="side-panel">
+<div class="panel-header"><div class="panel-title">📋 Tasks</div><div class="panel-stats" id="panelStats">0 scheduled</div></div>
+<div class="panel-scroll" id="panelTasks"><div class="empty-state"><div class="icon">✨</div><h3>No tasks</h3><p>Use AI Brain Dump!</p></div></div>
+<div class="quick-add-area"><textarea id="quickInput" placeholder="Quick add: gym, call mom..." disabled></textarea><div class="quick-add-row"><span style="font-size:9px;color:var(--text3)">Smart scheduling</span><button class="btn-primary btn-xs" onclick="quickAdd()" disabled id="quickBtn">Add</button></div></div>
+</aside>
+</div>
+</main>
+</div>
+
+<div class="modal-overlay hidden" id="dumpModal"><div class="modal">
+<h2>🧠 AI Brain Dump</h2><p class="subtitle">What do you want to accomplish this week? AI will parse and structure your tasks automatically.</p>
+<textarea class="form-input" id="dumpInput" placeholder="Examples:
+• Gym 3 times this week
+• Call mom on Tuesday
+• Buy groceries
+• Read 30 min daily
+• Book dentist
+• Deep clean apartment"></textarea>
+<div class="chip-group"><span class="chip" onclick="fillDump('gym 3x, call mom, groceries, read 30min, book dentist')">Gym + Social</span><span class="chip" onclick="fillDump('deep clean, spanish 20min, meal prep, bike ride')">Home + Learning</span><span class="chip" onclick="fillDump('meditate, journal, walk, yoga 2x')">Wellness Mix</span></div>
+<div class="modal-footer"><button onclick="closeModal('dumpModal')">Cancel</button><button class="btn-ai" id="aiParseBtn" onclick="aiParseBrainDump()">🤖 AI Parse →</button></div>
+</div></div>
+
+<div class="modal-overlay hidden" id="settingsModal"><div class="modal">
+<h2>⚙️ Settings</h2>
+<div style="padding:8px 0;border-bottom:1px solid var(--border)"><strong>Calendar:</strong> <span id="sCalStatus">Not connected</span></div>
+<div style="padding:8px 0;border-bottom:1px solid var(--border)"><strong>AI API Key:</strong> <span id="sAiStatus" style="color:var(--green)">✅ Saved in browser</span></div>
+<div style="padding:8px 0;border-bottom:1px solid var(--border)"><strong>Google Client:</strong> Configured</div>
+<div class="modal-footer"><button onclick="closeModal('settingsModal')">Close</button><button class="btn-primary" onclick="setupAIKey()">Update AI Key</button></div>
+</div></div>
+
+<div class="toast-container" id="toastBox"></div>
+
+<script>
+// ═══════════════════════════════════
+// TEMPO — Secure AI Weekly Planner
+// AI key stored in browser, not code
+// ═══════════════════════════════════
+
+const CFG={
+CID:'196886862868-jndtecgv4ksj14ub53m4qiglj510ngs8.apps.googleusercontent.com',
+KEY:'AIzaSyCPNBNEat1e95qkqsqGYTMfmGqp4Y17wcs',
+SC:'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email'
+};
+
+// Get AI key from localStorage (secure — never in code)
+function getHFKey(){return localStorage.getItem('tempo_hf_key');}
+function setHFKey(k){localStorage.setItem('tempo_hf_key',k);}
+function hasHFKey(){return !!getHFKey();}
+
+// If no key saved, prompt on first load
+if(!hasHFKey()){setTimeout(()=>{setupAIKey();},1000);}
+
+function setupAIKey(){
+const key=prompt('Enter your free Hugging Face API token:\n\nGet one at: https://huggingface.co/settings/tokens\n(Free, no credit card, takes 30 seconds)\n\nPaste your token (starts with hf_):',getHFKey()||'');
+if(key&&key.startsWith('hf_')){setHFKey(key.trim());toast('✅ AI key saved securely in your browser!','ok');}
+else if(key){toast('Invalid key — must start with hf_','err');}
+}
+
+let S={auth:!1,token:null,user:null,calId:null,calName:null,ws:new Date(),we:new Date(),workE:[],tempoE:[],tasks:[],def:[],committing:!1};
+
+function toast(m,t='ok'){const b=document.getElementById('toastBox'),d=document.createElement('div');d.className=`toast ${t}`;d.textContent=m;b.appendChild(d);setTimeout(()=>d.remove(),5000);}
+
+/* ── AI (Hugging Face) ── */
+async function callAI(prompt){
+const hfKey=getHFKey();if(!hfKey){toast('AI key required. Go to Settings → Update AI Key.','err');return null;}
+try{const r=await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3',{method:'POST',headers:{'Authorization':`Bearer ${hfKey}`,'Content-Type':'application/json'},body:JSON.stringify({inputs:`<s>[INST] ${prompt} [/INST]`,parameters:{max_new_tokens:500,temperature:0.7,return_full_text:!1}})});const d=await r.json();if(Array.isArray(d)&&d[0]?.generated_text)return d[0].generated_text.trim();if(d.generated_text)return d.generated_text.trim();if(d.error){console.error('AI:',d.error);return null;}return null;}catch(e){console.error('AI:',e);return null;}
+}
+
+/* ── Google Auth ── */
+async function handleAuth(){
+if(S.auth){try{google.accounts.oauth2.revoke(S.token)}catch(e){}S.auth=!1;S.token=null;S.workE=[];S.tempoE=[];updateUI();renderAll();toast('Disconnected','info');return;}
+const c=google.accounts.oauth2.initTokenClient({client_id:CFG.CID,scope:CFG.SC,callback:async r=>{if(r.error){toast('Connection failed','err');return;}S.token=r.access_token;S.auth=!0;toast('✅ Connected!','ok');await loadProfile();await initGapi();await loadCalendars();updateUI();initWeek();}});c.requestAccessToken({prompt:'consent'});}
+async function initGapi(){return new Promise(r=>{gapi.load('client',async()=>{await gapi.client.init({apiKey:CFG.KEY,discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']});r();});});}
+async function loadProfile(){try{const r=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:`Bearer ${S.token}`}});const p=await r.json();S.user=p;document.getElementById('userName').textContent=p.name||'User';document.getElementById('userEmail').textContent=p.email||'';document.getElementById('userAvatar').textContent=(p.given_name||'U')[0].toUpperCase();}catch(e){}}
+async function loadCalendars(){try{const r=await gapi.client.calendar.calendarList.list();const cals=r.result.items||[];if(!cals.length)return;const p=cals.find(c=>c.primary)||cals[0];S.calId=p.id;S.calName=p.summary;}catch(e){}}
+function updateUI(){const p=document.getElementById('calPill'),t=document.getElementById('calPillText');if(S.auth){p.className='cal-pill connected';t.textContent=S.calName||'Connected';document.getElementById('quickInput').disabled=!1;document.getElementById('quickBtn').disabled=!1;document.getElementById('commitTopBtn').disabled=!1;}else{p.className='cal-pill';t.textContent='Connect Google Calendar';document.getElementById('quickInput').disabled=!0;document.getElementById('quickBtn').disabled=!0;document.getElementById('commitTopBtn').disabled=!0;}}
+
+/* ── Week ── */
+function initWeek(){const n=new Date(),d=n.getDay(),m=new Date(n);m.setDate(n.getDate()-((d+6)%7));m.setHours(0,0,0,0);S.ws=m;S.we=new Date(m);S.we.setDate(m.getDate()+7);updateLabel();fetchE();}
+function updateLabel(){const m=S.ws;document.getElementById('weekTitle').textContent=`${m.toLocaleDateString('en-US',{month:'short',day:'numeric'})} — ${new Date(m.getTime()+4*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'})}, ${m.getFullYear()}`;}
+function navWeek(dir){S.ws.setDate(S.ws.getDate()+dir*7);S.we.setDate(S.we.getDate()+dir*7);updateLabel();fetchE();}
+function goToToday(){initWeek();}
+async function fetchE(){if(!S.auth||!S.calId)return renderPlan();try{const r=await gapi.client.calendar.events.list({calendarId:S.calId,timeMin:S.ws.toISOString(),timeMax:S.we.toISOString(),singleEvents:!0,orderBy:'startTime',maxResults:250});S.workE=r.result.items||[];try{const r2=await gapi.client.calendar.events.list({calendarId:S.calId,timeMin:S.ws.toISOString(),timeMax:S.we.toISOString(),q:'Tempo:',singleEvents:!0,maxResults:100});S.tempoE=r2.result.items||[];}catch(e){}renderAll();}catch(e){}}
+
+/* ── AI Parse ── */
+async function aiParseBrainDump(){
+const input=document.getElementById('dumpInput').value.trim();if(!input){toast('Enter tasks first','err');return;}
+if(!hasHFKey()){setupAIKey();return;}
+const btn=document.getElementById('aiParseBtn');btn.disabled=!0;btn.innerHTML='<span class="spinner"></span> AI thinking...';
+toast('🤖 AI parsing (free — may take 20s first time)...','info');
+const prompt=`You are Tempo. Return ONLY valid JSON: [{"name":"Task","duration":minutes,"category":"health|errand|social|admin|hobby|rest|personal","priority":"high|medium|low","frequency":number}]. Parse: "${input}". Rules: gym=90, groceries=60, calls=30, reading=30, cleaning=120. Default=60. Extract "3x"→3, "daily"→5.`;
+const result=await callAI(prompt);
+btn.disabled=!1;btn.innerHTML='🤖 AI Parse →';
+if(!result){fallbackParse(input);return;}
+try{const cleaned=result.replace(/```json|```/g,'').trim();const match=cleaned.match(/\[[\s\S]*\]/);if(!match){fallbackParse(input);return;}const tasks=JSON.parse(match[0]);tasks.forEach(t=>{for(let i=0;i<(t.frequency||1);i++)S.tasks.push({id:Date.now()+Math.random(),name:t.name,duration:t.duration||60,category:t.category||'personal',priority:t.priority||'medium',status:'pending'});});closeModal('dumpModal');renderAll();toast(`✅ AI parsed ${tasks.length} tasks!`,'ok');}catch(e){fallbackParse(input);}
+}
+function fallbackParse(input){const items=input.split(/[,\n]/).filter(i=>i.trim());items.forEach(i=>addTask(i.trim()));closeModal('dumpModal');toast(`✅ ${items.length} tasks (smart defaults)`,'ok');renderAll();}
+
+/* ── Commit ── */
+async function commitAll(){
+if(!S.auth){toast('Connect calendar','err');return;}if(S.committing)return;
+const ok=S.tasks.filter(t=>t.status!=='done');if(!ok.length){toast('No tasks','err');return;}
+S.committing=!0;const b=document.getElementById('commitTopBtn');b.disabled=!0;b.innerHTML='<span class="spinner"></span>';
+let c=0,f=0;const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+for(let i=0;i<ok.length;i++){const tk=ok[i];try{const em={health:'🏋️',errand:'🛒',social:'📞',admin:'📋',hobby:'📖',rest:'🧘',personal:'📌'}[tk.category]||'📌';const s=new Date();s.setDate(s.getDate()+1+i);s.setHours(18,0,0,0);const e=new Date(s);e.setMinutes(e.getMinutes()+(tk.duration||60));await gapi.client.calendar.events.insert({calendarId:S.calId,resource:{summary:`${em} Tempo: ${tk.name}`,description:`Created by Tempo AI\n${tk.category} · ${tk.duration}min`,start:{dateTime:s.toISOString(),timeZone:tz},end:{dateTime:e.toISOString(),timeZone:tz},reminders:{useDefault:!1,overrides:[{method:'popup',minutes:15}]}}});tk.status='done';tk.scheduledAt=`${s.toLocaleDateString('en-US',{weekday:'short'})} ${s.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;c++;}catch(e){f++;}}
+S.committing=!1;b.disabled=!1;b.innerHTML='Commit to Calendar';
+if(c>0){toast(`✅ ${c} events added to "${S.calName}"!`,'ok');fetchE();}if(f>0)toast(`⚠️ ${f} failed`,'err');
+renderTasks();
+}
+
+/* ── Tasks ── */
+function quickAdd(){const t=document.getElementById('quickInput').value.trim();if(!t)return;addTask(t);document.getElementById('quickInput').value='';}
+function addTask(tx){const d=estD(tx),c=estC(tx);S.tasks.push({id:Date.now()+Math.random(),name:tx,duration:d,category:c,priority:'medium',status:'pending'});renderTasks();renderPlan();toast(`"${tx}" added`,'ok');}
+function estD(t){const l=t.toLowerCase();const m=l.match(/(\d+)\s*(min|hour)/);if(m)return m[2]==='hour'?parseInt(m[1])*60:parseInt(m[1]);if(l.match(/gym|exercise|workout/))return 90;if(l.match(/deep\s*clean/))return 120;if(l.match(/groceries|errand|shop/))return 60;if(l.match(/call|phone/))return 30;return 60;}
+function estC(t){const l=t.toLowerCase();if(l.match(/gym|exercise|workout|run|bike|fitness|yoga|walk/))return'health';if(l.match(/groceries|errand|shop|buy|meal/))return'errand';if(l.match(/call|mom|dad|friend|family/))return'social';if(l.match(/dentist|doctor|appointment|bill|admin|clean/))return'admin';if(l.match(/read|book|hobby|piano|guitar|study|learn/))return'hobby';if(l.match(/meditate|journal|rest|nap/))return'rest';return'personal';}
+function removeTask(id){S.tasks=S.tasks.filter(t=>t.id!==id);renderTasks();renderPlan();}
+
+/* ── Modals ── */
+function openBrainDump(){document.getElementById('dumpModal').classList.remove('hidden');}
+function fillDump(t){document.getElementById('dumpInput').value=t;}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+
+/* ── Tabs ── */
+function switchTab(tab){
+document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+if(tab==='plan'){document.querySelector('.nav-item').classList.add('active');renderPlan();}
+else if(tab==='tasks'){document.querySelectorAll('.nav-item')[2].classList.add('active');renderPlan();}
+else if(tab==='settings'){updateUI();document.getElementById('sCalStatus').textContent=S.auth?'Connected':'Not connected';document.getElementById('settingsModal').classList.remove('hidden');}
+}
+
+/* ── Render ── */
+function renderAll(){renderPlan();renderTasks();}
+function renderPlan(){
+const sc=S.tasks.length,df=S.def.length,ready=S.tasks.filter(t=>t.status!=='done').length;
+document.getElementById('mainArea').innerHTML=`
+<div class="stats-grid">
+<div class="stat-box"><div class="stat-label">Tasks</div><div class="stat-value accent">${sc+df}</div></div>
+<div class="stat-box"><div class="stat-label">Ready</div><div class="stat-value green">${ready}</div></div>
+<div class="stat-box"><div class="stat-label">Calendar</div><div class="stat-value">${S.workE.length}</div></div>
+<div class="stat-box"><div class="stat-label">Done</div><div class="stat-value amber">${S.tempoE.length}</div></div>
+</div>
+<div class="insight-card"><div class="insight-emoji">🤖</div><div><div class="insight-title">Tempo's Take</div><div class="insight-text">${hasHFKey()?`AI-powered parsing is ready! You have ${S.workE.length} events this week.`:'Setup your free AI key in Settings for smart task parsing.'}</div></div></div>
+<div class="section-row"><span class="section-heading">This Week</span></div>
+<div class="week-grid">${renderDays()}</div>`;
+}
+function renderDays(){const days=['Mon','Tue','Wed','Thu','Fri'],today=new Date();return days.map((d,i)=>{const dt=new Date(S.ws);dt.setDate(dt.getDate()+i);const isT=dt.toDateString()===today.toDateString();const we=S.workE.filter(e=>new Date(e.start?.dateTime||e.start?.date).toDateString()===dt.toDateString());const te=S.tempoE.filter(e=>new Date(e.start?.dateTime||e.start?.date).toDateString()===dt.toDateString());return`<div class="day-col${isT?' today':''}"><div class="day-header"><span class="day-name">${d}${isT?' · Today':''}</span><span class="day-date">${dt.getDate()}</span></div><div class="day-content">${we.map(e=>`<div class="event-pill work"><div class="event-name">${e.summary||'Busy'}</div></div>`).join('')}${te.map(e=>`<div class="event-pill tempo"><div class="event-name">${e.summary}</div></div>`).join('')}${!we.length&&!te.length?'<div class="empty-day">Open</div>':''}</div></div>`}).join('');}
+function renderTasks(){
+const sc=S.tasks.length,df=S.def.length,tt=sc+df;document.getElementById('panelStats').textContent=`${sc} scheduled`;document.getElementById('navCount').textContent=tt;document.getElementById('navAllTasks').textContent=tt;document.getElementById('progBar').style.width=tt?`${(sc/tt)*100}%`:'0%';document.getElementById('progText').textContent=tt?`${sc} of ${tt}`:'0';
+document.getElementById('panelTasks').innerHTML=S.tasks.length?S.tasks.map(t=>`<div class="task-card ${t.status==='done'?'committed':'scheduled'}"><div class="task-name">${t.name}</div><span class="task-tag tag-${t.category}">${t.category}</span> <span class="task-dur">${t.duration}m</span> ${t.status==='done'?`<span class="slot-done">✅ ${t.scheduledAt||''}</span>`:`<span class="slot-ready">⏳ Ready</span>`}<div style="margin-top:4px"><button class="btn-xs btn-outline" onclick="removeTask(${t.id})">Remove</button></div></div>`).join(''):'<div class="empty-state"><div class="icon">✨</div><h3>No tasks</h3></div>';}
+
+function init(){const n=new Date(),d=n.getDay(),m=new Date(n);m.setDate(n.getDate()-((d+6)%7));m.setHours(0,0,0,0);S.ws=m;S.we=new Date(m);S.we.setDate(m.getDate()+7);updateLabel();renderPlan();console.log('🚀 Tempo — Secure AI Ready');}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
